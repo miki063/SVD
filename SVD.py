@@ -3,20 +3,24 @@ import numpy as np
 import matplotlib
 import matplotlib.image as image
 import matplotlib.pyplot as plt
-from scipy import misc
-from PIL import Image, ImageTk
 from tkinter import *
 from tkinter import filedialog
 
-#Funkce, ktera umozni uzivateli otevrit obrazek
 def Open_file():
+    """Otevře dialog pro výběr souboru a vrátí cestu k vybranému souboru."""
     root = Tk()
     root.withdraw()
     filename = filedialog.askopenfilename(parent=root,initialdir="/",title='Please select a directory')
     return filename
 
-#Funkce hledajici index v seznamu cisla s hodnotou nejblize k hledanemu cislu
 def Find_closest_number_index(sorted_list, target):
+    """
+    Nalezne index nejbližšího čísla k danému číslu v seřazeném seznamu.
+
+    parametry:
+        sorted_list -- seřazený seznam
+        target -- hledané číslo
+    """
     #Zavedeni intervalu, ve kterem se hleda
     left, right = 0, len(sorted_list) - 1
 
@@ -53,8 +57,15 @@ def Find_closest_number_index(sorted_list, target):
     #Vraceni indexu nejblizsiho cisla k hledanemu cislu
     return closest_index
 
-#Funkce, ktera spocita potrebny rank k pozadovane kvalite
 def Calculate_rank(A, quality, DOWNSAMPLE = 1):
+    """
+    Vypočítá hodnotu počtu ranků podle požadované kvality.
+    
+    parametry:
+        A -- vstupní obrázek
+        quality -- požadovaná kvalita v procentech
+        DOWNSAMPLE -- Faktor zmenšení obrázku (výchozí hodnota 1)
+    """
     #Rozdeleni podle barev a pokud si to uzivatel vybral, tak i rovnou zmenseni
     R = A[::DOWNSAMPLE, ::DOWNSAMPLE, 0]
     G = A[::DOWNSAMPLE, ::DOWNSAMPLE, 1]
@@ -78,8 +89,15 @@ def Calculate_rank(A, quality, DOWNSAMPLE = 1):
     #Vraceni ranku odpovidajiciho pozadovane kvalite
     return rank
 
-#Funkce, ktera provede kompresi barevneho obrazu
 def Compression_Color(A, r, DOWNSAMPLE = 1):
+    """
+    Kompresuje barevný obrázek pomocí singulárního rozkladu.
+    
+    parametry:
+        A -- vstupní obrázek
+        r -- počet zachovaných singulárních hodnot
+        DOWNSAMPLE -- Faktor zmenšení obrázku (výchozí hodnota 1)
+    """
     #Rozdeleni obrazku podle RGB
     R = A[:: DOWNSAMPLE, :: DOWNSAMPLE, 0]
     G = A[:: DOWNSAMPLE, :: DOWNSAMPLE, 1]
@@ -127,11 +145,17 @@ def Compression_Color(A, r, DOWNSAMPLE = 1):
     Compressed_image = np.stack((R_compressed, G_compressed, B_compressed), axis = 2)
     Compressed_image = Compressed_image.astype('uint8')
 
-    #Vraceni zmenseneho obrazu
+    #Vraceni zmenseneho obrazu, poctu singularnich hodnot, seznamu hodnot ranku, seznamu hodnot kvality v procentech, seznamu singularnich hodnot
     return Compressed_image, n, ranks, quality_retained, S
 
-#Funkce, ktera provede kompresi cernobileho obrazu
 def Compression_Gray(A, r):
+    """
+    Provede kompresi nebarevného obrázku použitím sinfulárního rozkladu.
+
+    argumenty:
+        A -- vstupní obrázek
+        r -- počet zachovaných singulárních hodnot
+    """
     #Provedeni singularniho rozkladu
     U, S, VT = np.linalg.svd(A)
 
@@ -150,11 +174,22 @@ def Compression_Gray(A, r):
     Compressed_image = np.dot(U_compressed * S_compressed, VT_compressed)
     Compressed_image = Compressed_image.astype('uint8')
 
-    #Vraceni zmenseneho obrazu
+    #Vraceni zmenseneho obrazu, poctu singularnich hodnot, seznamu hodnot ranku, seznamu hodnot kvality v procentech, seznamu singularnich hodnot
     return Compressed_image, n, ranks, quality_retained,S
 
-#Funkce, zobrazujici graf zavislosti kvality obrazku na ranku
 def Graph_quality(compressed_image, n, ranks, quality_retained, r, gray):
+    """
+    Zobrazí komprimovaný obrázek a graf závislosti kvality na ranku.
+
+    argumenty:
+        compressed_image -- komprimovaný obrázek
+        n -- počet singulárních hodnot v původní matici
+        ranks -- seznam hodnot ranku
+        quality_retained -- seznam hodnot kvality v procentech
+        r -- počet zachovaných singulárních hodnot
+        gray -- indikátor, zda je obrázek černobílý (1 pro černobílý, jinak 0)
+    """
+
     figure, axis = plt.subplots(2, 1, figsize = (16, 4))
     #Zobrazeni obrazku
     plt.sca(axis[0]) 
@@ -175,8 +210,18 @@ def Graph_quality(compressed_image, n, ranks, quality_retained, r, gray):
     plt.title('Závislost ranku na kvalitě')
     plt.show()
 
-#Funkce zobrazujici graf zavislosti ranku na hodnotách singularnich hodnot
 def Graph_singular(compressed_image, ranks, n, S, r, gray):
+    """
+    Zobrazí komprimovaný obrázek a graf závislosti singulárních hodnot na ranku.
+
+    argumenty:
+        compressed_image -- komprimovaný obrázek
+        ranks -- seznam hodnot ranku
+        n -- počet singulárních hodnot v původní matici
+        S -- seznam singulárních hodnot
+        r -- počet zachovaných singulárních hodnot
+        gray -- indikátor, zda je obrázek černobílý (1 pro černobílý, jinak 0)
+    """
     figure, axis = plt.subplots(2, 1, figsize = (16, 4))
     #Zobrazeni obrazku
     plt.sca(axis[0])
@@ -197,8 +242,15 @@ def Graph_singular(compressed_image, ranks, n, S, r, gray):
     plt.title('Závislost ranku na hodnotach singulárních hodnot')
     plt.show()
     
-#Funkce zobrazujici puvodni a zmenseny obrazek vedle sebe
 def Compare(A, compressed_image, gray):
+    """
+    Zobrazí vedle sebe komprimovaný a původní obrázek.
+
+    argumenty
+        A -- původní obrázek
+        compressed_image -- komprimovaný obrázek
+        gray -- indikátor, zda je obrázek černobílý (1 pro černobílý, jinak 0)
+    """
     figure, axis = plt.subplots(1, 2, figsize = (16,9))
 
     #Zobrazení původního obrázku
@@ -217,8 +269,14 @@ def Compare(A, compressed_image, gray):
 
     plt.show()
 
-#Funkce, ktera vypocita MSE (Mean squared Error)
 def calculate_mse(original_image, compressed_image):
+    """
+    Vypočítá a vrátí MSE (Střední kvadratickou chybu) mezi původním a komprimovaným obrázkem.
+
+    argumenty
+        original_image -- původní obrázek
+        compressed_image -- komprimovaný obrázek
+    """
     #Oznaceni si rozdilu puvodniho obrazku se zmensenym
     diff = original_image - compressed_image
 
@@ -226,19 +284,25 @@ def calculate_mse(original_image, compressed_image):
     squared_diff = diff**2
 
     #Vypocet prumeru umocnenych rozdilu
-    mse = np.mean(squared_diff)půvvo
+    mse = np.mean(squared_diff)
     
     return mse
 
-#Funkce, ktera vypocita PSNR (Peak Signal-to-Noise Ratio)
 def calculate_psnr(mse):
+    """Vypočítá a vrátí PSNR (Peak Signal-to-Noise Ratio) na základě MSE."""
     #PSNR vypocet. 255 jelikoz se predokladaji 8 bitove obrazky
     psnr = 20 * np.log10(255) - 10 * np.log10(mse)
     
     return psnr
 
-#Funkce, ktera vypocita SSIM (Structural Similarity Index)
 def calculate_ssim(original_image, compressed_image):
+    """
+    Vypočítá a vrátí SSIM (Structural Similarity Index) mezi původním a komprimovaným obrázkem.
+
+    argumenty
+        original_image -- původní obrázek
+        compressed_image -- komprimovaný obrázek
+    """
     #Zajistuje minimalizaci problemu se stabilitou
     k1 = 0.01
     k2 = 0.03
